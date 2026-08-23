@@ -4,13 +4,20 @@ interface Props {
 }
 
 const BLOCKS: { color: string; glow: string; size: number; left: string; duration: string; delay: string }[] = [
-  { color: '#5ad1ff', glow: 'rgba(90,209,255,.6)',  size: 46, left: '8%',  duration: '13s', delay: '-2s' },
-  { color: '#ffe066', glow: 'rgba(255,224,102,.6)', size: 34, left: '22%', duration: '17s', delay: '-9s' },
-  { color: '#c88bff', glow: 'rgba(200,139,255,.6)', size: 50, left: '40%', duration: '15s', delay: '-5s' },
-  { color: '#6bff9e', glow: 'rgba(107,255,158,.6)', size: 30, left: '58%', duration: '11s', delay: '-1s' },
-  { color: '#ff6b6b', glow: 'rgba(255,107,107,.6)', size: 42, left: '72%', duration: '19s', delay: '-12s' },
-  { color: '#6b8bff', glow: 'rgba(107,139,255,.6)', size: 36, left: '86%', duration: '14s', delay: '-6s' },
-  { color: '#ffa25a', glow: 'rgba(255,162,90,.6)',  size: 44, left: '95%', duration: '16s', delay: '-4s' },
+  { color: '#5ad1ff', glow: 'rgba(90,209,255,.6)',  size: 46, left: '4%',  duration: '13s', delay: '-2s' },
+  { color: '#ffe066', glow: 'rgba(255,224,102,.6)', size: 34, left: '15%', duration: '17s', delay: '-9s' },
+  { color: '#c88bff', glow: 'rgba(200,139,255,.6)', size: 50, left: '26%', duration: '15s', delay: '-5s' },
+  { color: '#6bff9e', glow: 'rgba(107,255,158,.6)', size: 30, left: '37%', duration: '11s', delay: '-1s' },
+  { color: '#ff6b6b', glow: 'rgba(255,107,107,.6)', size: 42, left: '48%', duration: '19s', delay: '-12s' },
+  { color: '#6b8bff', glow: 'rgba(107,139,255,.6)', size: 36, left: '59%', duration: '14s', delay: '-6s' },
+  { color: '#ffa25a', glow: 'rgba(255,162,90,.6)',  size: 44, left: '70%', duration: '16s', delay: '-4s' },
+  { color: '#5ad1ff', glow: 'rgba(90,209,255,.6)',  size: 32, left: '81%', duration: '12s', delay: '-8s' },
+  { color: '#ffe066', glow: 'rgba(255,224,102,.6)', size: 48, left: '92%', duration: '18s', delay: '-3s' },
+  { color: '#c88bff', glow: 'rgba(200,139,255,.6)', size: 28, left: '10%', duration: '20s', delay: '-14s' },
+  { color: '#6bff9e', glow: 'rgba(107,255,158,.6)', size: 40, left: '32%', duration: '13s', delay: '-16s' },
+  { color: '#ff6b6b', glow: 'rgba(255,107,107,.6)', size: 34, left: '53%', duration: '17s', delay: '-10s' },
+  { color: '#6b8bff', glow: 'rgba(107,139,255,.6)', size: 46, left: '65%', duration: '15s', delay: '-18s' },
+  { color: '#ffa25a', glow: 'rgba(255,162,90,.6)',  size: 30, left: '87%', duration: '11s', delay: '-7s' },
 ];
 
 export function TitleScreen({ bestScore, onStart }: Props) {
