@@ -13,6 +13,8 @@ import {
   playLevelUp,
   playHold,
   playGameOver,
+  startBgm,
+  stopBgm,
 } from '@/lib/sound';
 import { GameBoard } from './GameBoard';
 import { NextQueue } from './NextQueue';
@@ -24,6 +26,9 @@ import { GameOverScreen } from './GameOverScreen';
 import { TouchControls } from './TouchControls';
 
 const INACTIVE_PHASES = new Set(['title', 'paused', 'gameover', 'lineClear']);
+// BGM用。ラインクリア演出の一瞬は曲を止めたくないので、落下ループの
+// INACTIVE_PHASES とは別に持つ(title/paused/gameoverのときだけ止める)
+const BGM_INACTIVE_PHASES = new Set(['title', 'paused', 'gameover']);
 
 export function GameScreen() {
   const [state, dispatch] = useReducer(reducer, undefined, () =>
@@ -54,6 +59,14 @@ export function GameScreen() {
       playLevelUp();
     }
   }, [state.phase, state.clearingRows.length, state.level]);
+
+  // BGM: タイトル/ポーズ/ゲームオーバー以外のプレイ中だけ流す
+  const bgmActive = !BGM_INACTIVE_PHASES.has(state.phase);
+  useEffect(() => {
+    if (!bgmActive) return;
+    startBgm();
+    return () => stopBgm();
+  }, [bgmActive]);
 
   // ラインクリア演出のあと、実際に行を詰めて次のピースへ進める
   useEffect(() => {

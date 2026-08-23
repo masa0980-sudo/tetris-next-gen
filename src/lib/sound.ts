@@ -79,3 +79,65 @@ export function playGameOver() {
   const melody = [440, 370, 330, 220];
   melody.forEach((f, i) => tone(f, 0.28, 'sine', 0.35, i * 0.22));
 }
+
+/* =========================================================
+   BGM — プレイ中だけ鳴らすループ曲。外部音源は使わず、
+   look-ahead スケジューラでベース+リードの16分音符パターンを
+   ループ再生する(効果音と同じ Web Audio API の合成のみ)。
+   イ短調・駆け足のウォーキングベースで、テンポ感のある曲調にしている。
+   ========================================================= */
+const NOTE: Record<string, number> = {
+  A2: 110.0, C3: 130.81, D3: 146.83, E3: 164.81, F3: 174.61, G3: 196.0, A3: 220.0,
+  C4: 261.63, D4: 293.66, E4: 329.63, F4: 349.23, G4: 392.0, A4: 440.0,
+};
+
+const BGM_BPM = 150;
+const SIXTEENTH = 60 / BGM_BPM / 4;
+const BGM_STEPS = 16;
+// 8分音符ごとのウォーキングベース(Am - F - C - G の駆け足進行)
+const BGM_BASS = [
+  'A2', null, 'A2', null, 'F3', null, 'A2', null,
+  'C3', null, 'A2', null, 'E3', null, 'G3', null,
+];
+// 4分音符ごとの短いリード動機。少し緊張感のある短調フレーズ
+const BGM_LEAD = [
+  'E4', null, null, null, 'C4', null, null, null,
+  'D4', null, null, null, 'A3', null, null, null,
+];
+
+let bgmTimerId: number | null = null;
+let bgmNextTime = 0;
+let bgmStep = 0;
+
+function scheduleBgmStep(step: number, offset: number) {
+  const bassNote = BGM_BASS[step];
+  if (bassNote) tone(NOTE[bassNote], SIXTEENTH * 1.8, 'triangle', 0.14, offset);
+  const leadNote = BGM_LEAD[step];
+  if (leadNote) tone(NOTE[leadNote], SIXTEENTH * 3, 'square', 0.06, offset);
+}
+
+function bgmTick() {
+  const ac = getCtx();
+  if (!ac) return;
+  while (bgmNextTime < ac.currentTime + 0.15) {
+    scheduleBgmStep(bgmStep, bgmNextTime - ac.currentTime);
+    bgmNextTime += SIXTEENTH;
+    bgmStep = (bgmStep + 1) % BGM_STEPS;
+  }
+}
+
+export function startBgm() {
+  const ac = getCtx();
+  if (!ac || bgmTimerId !== null) return;
+  if (ac.state === 'suspended') ac.resume();
+  bgmStep = 0;
+  bgmNextTime = ac.currentTime + 0.05;
+  bgmTimerId = window.setInterval(bgmTick, 50);
+}
+
+export function stopBgm() {
+  if (bgmTimerId !== null) {
+    window.clearInterval(bgmTimerId);
+    bgmTimerId = null;
+  }
+}
