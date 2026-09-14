@@ -91,6 +91,24 @@ title → falling → (接地) → lineClear(揃った行があれば) → falli
 - **サウンド**: Web Audio APIで合成。移動・回転・ハードドロップ・ライン消去(4ラインは特別なファンファーレ)・
   レベルアップ・ホールド・ゲームオーバーの各SEを持つ
 
+## プレイ回数集計 (PlayCounts)
+
+`src/lib/playCounts.ts` が、他の自作ブラウザゲーム(Rhythm_gameなど)と共有している
+Firestoreプロジェクト `rythm-game-mo` に対して `fetch()` のみでプレイ回数を送信する
+(Firebase SDKは導入しない、単一関数の小さなモジュール)。
+
+- ドキュメントは `playCounts/tetris`(1ドキュメント・`count`フィールドのみ)。
+- `increment()` はまず `:commit` で原子的な `count + 1`(increment transform)を試み、
+  ドキュメント未作成(このgameId初回プレイ)で失敗した場合のみ `count: 1` での新規作成に
+  フォールバックする。セキュリティルールが新規作成を `{count: 1}` ちょうどの場合のみ許可する
+  ため、手動でのドキュメント作成は不要。
+- 呼び出し元は `src/components/GameScreen.tsx` の `startGame()` — `title → falling` への
+  遷移(`START`)と、ポーズ/ゲームオーバーからのリスタート(`RESTART`)を1つの関数に集約し、
+  新規ゲーム開始のたびに1回だけ発火する。`useReducer` の `reducer.ts` 自体は純粋関数のまま
+  保つため、副作用(このfetch呼び出し)はコンポーネント側のディスパッチ経路に置いている。
+- 完全にfire-and-forget: `await` せず、失敗してもゲーム進行やUIに一切影響しない
+  (ローディング表示もエラー表示も無し。失敗時は`console.warn`のみ)。
+
 ## デプロイ
 
 `main`ブランチへのpushで`.github/workflows/deploy-pages.yml`が自動的に静的ビルド・GitHub Pagesへデプロイする。

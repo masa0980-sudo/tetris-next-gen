@@ -4,6 +4,7 @@ import { useReducer, useEffect, useRef } from 'react';
 import { reducer, createInitialState } from '@/lib/reducer';
 import { hardDropTarget } from '@/lib/tetrisGame';
 import { loadHighScore } from '@/lib/storage';
+import { increment as incrementPlayCount } from '@/lib/playCounts';
 import { LINE_CLEAR_ANIM_MS, dropIntervalForLevel } from '@/lib/constants';
 import {
   playMove,
@@ -39,6 +40,13 @@ export function GameScreen() {
     state.active && state.phase === 'falling'
       ? hardDropTarget(state.board, state.active)
       : null;
+
+  // 新規ゲーム開始(タイトルからのスタート/ゲームオーバーやポーズからのリスタート)の
+  // 唯一の入り口。ここを通るたびにプレイ回数を1件加算する(fire-and-forget、失敗しても無視)。
+  const startGame = (type: 'START' | 'RESTART') => {
+    incrementPlayCount();
+    dispatch({ type });
+  };
 
   // 効果音: フェーズ/レベルの変化を検知して鳴らす
   const prevPhaseRef = useRef(state.phase);
@@ -117,7 +125,7 @@ export function GameScreen() {
     return (
       <TitleScreen
         bestScore={state.bestScore}
-        onStart={() => dispatch({ type: 'START' })}
+        onStart={() => startGame('START')}
       />
     );
   }
@@ -169,7 +177,7 @@ export function GameScreen() {
             {state.phase === 'paused' && (
               <PauseOverlay
                 onResume={() => dispatch({ type: 'TOGGLE_PAUSE' })}
-                onRestart={() => dispatch({ type: 'RESTART' })}
+                onRestart={() => startGame('RESTART')}
               />
             )}
 
@@ -178,7 +186,7 @@ export function GameScreen() {
                 score={state.score}
                 bestScore={state.bestScore}
                 lines={state.lines}
-                onRetry={() => dispatch({ type: 'RESTART' })}
+                onRetry={() => startGame('RESTART')}
               />
             )}
           </div>
