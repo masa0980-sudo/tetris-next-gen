@@ -1,3 +1,6 @@
+import { useEffect, useState } from 'react';
+import { fetchCount } from '@/lib/playCounts';
+
 interface Props {
   bestScore: number;
   onStart: () => void;
@@ -21,6 +24,18 @@ const BLOCKS: { color: string; glow: string; size: number; left: string; duratio
 ];
 
 export function TitleScreen({ bestScore, onStart }: Props) {
+  // プレイ回数の表示用。ブロックしない — 取得できるまで/失敗時は何も出さない。
+  const [playCount, setPlayCount] = useState<number | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    fetchCount().then((n) => {
+      if (!cancelled) setPlayCount(n);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   return (
     <div className="relative min-h-screen overflow-hidden bg-gray-950 flex flex-col items-center justify-center gap-8 p-8">
       {/* 落ちてくるブロックのシルエット + グリッド背景 */}
@@ -74,6 +89,12 @@ export function TitleScreen({ bestScore, onStart }: Props) {
       >
         PLAY NOW
       </button>
+
+      {playCount !== null && (
+        <div className="relative text-xs text-white/40 font-mono tracking-widest tabular-nums">
+          PLAYED {playCount.toLocaleString()} TIMES
+        </div>
+      )}
 
       <div
         className="relative flex flex-col items-center gap-1.5 px-6 py-3 rounded-xl text-xs font-mono text-white/80"

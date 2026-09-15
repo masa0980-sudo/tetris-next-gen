@@ -108,6 +108,13 @@ Firestoreプロジェクト `rythm-game-mo` に対して `fetch()` のみでプ�
   保つため、副作用(このfetch呼び出し)はコンポーネント側のディスパッチ経路に置いている。
 - 完全にfire-and-forget: `await` せず、失敗してもゲーム進行やUIに一切影響しない
   (ローディング表示もエラー表示も無し。失敗時は`console.warn`のみ)。
+- 表示用の読み取りは `fetchCount()`(`playCounts.ts` に `increment()` と並んで定義)。
+  `playCounts/tetris` を素の `GET` で1件取得するだけの読み取り専用関数で、ドキュメント未作成
+  (誰もまだプレイしていない)やエラー時は `null` を返す。呼び出し側はその場合何も表示しない。
+- `TitleScreen.tsx` がマウント時に一度だけ `fetchCount()` を呼び、解決してから
+  「PLAY NOW」ボタンの下に `PLAYED {count} TIMES` を小さく表示する(BEST SCOREと同系統の
+  `font-mono tracking-widest text-white/40` スタイル)。これもブロッキングではなく、
+  取得できるまで/失敗時はそのスペースに何も出さない。
 
 ## デプロイ
 

@@ -62,3 +62,28 @@ export function increment(): Promise<void> {
       console.warn("playCount increment failed:", e);
     });
 }
+
+/**
+ * 表示用に現在のカウントを取得する。ドキュメントがまだ存在しない場合(このgameIdを
+ * 誰もまだプレイしていない)やエラー時は null を返す — 呼び出し側は単に何も表示しない。
+ *
+ * 単一ドキュメントの読み取り専用GET(SDK不使用、素の fetch())。ローディング表示は
+ * 挟まず、非同期に解決してから埋め込む想定(レンダリングをブロックしない)。
+ */
+export function fetchCount(): Promise<number | null> {
+  const url = `${ROOT}/playCounts/${encodeURIComponent(GAME_ID)}?key=${API_KEY}`;
+
+  return fetch(url)
+    .then((res) => {
+      if (!res.ok) return null;
+      return res.json();
+    })
+    .then((doc) => {
+      if (!doc || !doc.fields || !doc.fields.count) return null;
+      return parseInt(doc.fields.count.integerValue, 10);
+    })
+    .catch((e) => {
+      console.warn("playCount fetch failed:", e);
+      return null;
+    });
+}
