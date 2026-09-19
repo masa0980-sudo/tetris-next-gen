@@ -116,6 +116,19 @@ Firestoreプロジェクト `rythm-game-mo` に対して `fetch()` のみでプ�
   `font-mono tracking-widest text-white/40` スタイル)。これもブロッキングではなく、
   取得できるまで/失敗時はそのスペースに何も出さない。
 
+## モバイルレイアウトとタッチ操作(2026-09-19)
+
+- `--cell-size` は幅だけでなく高さでも上限を決める(`globals.css` の `@media (pointer: coarse)`)。
+  盤面は `cell*20 + 46px`、スコア/余白/操作ボタンで約280px使うので、`(100dvh - 280px) / 20` を
+  超えないように `clamp()` する。これが無いと iPhone 13 相当(可視 664px)で回転/DROP ボタンが
+  画面外に落ち、スクロールしないと押せなかった(ポートフォリオ掲載ゲームの一斉点検で発覚)。
+  `100vh` → `100dvh` の順に2回宣言しているのは古いブラウザ向けフォールバック。
+- `TouchControls.tsx` の ◀▼▶ は長押しオートリピート(`DAS_MS=170` 後に `REPEAT_MS=50` 間隔)。
+  キーボードの keydown リピートと同じ操作感にするため。回転/HOLD/DROP は単発のまま。
+- ボタンは `pointerdown` で即発火し `setPointerCapture` で指を固定する。`click` を使わないので
+  タップ→離すの往復ぶんの遅れが無く、複数ボタンの同時押しもポインタごとに独立して届く
+  (React の `onPointerDown` はポインタIDごとに呼ばれるため、特別なID管理は不要)。
+
 ## デプロイ
 
 `main`ブランチへのpushで`.github/workflows/deploy-pages.yml`が自動的に静的ビルド・GitHub Pagesへデプロイする。

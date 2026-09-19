@@ -11,6 +11,23 @@
   }
 }
 
+/* タッチ端末では「スコア + 盤面 + 操作ボタン」を1画面に収める。
+   盤面の高さ = cell*20 + 46px、盤面以外(スコア/余白/ボタン)で約280px使うので、
+   縦が足りない端末ではセルを縮めてボタンが画面外に落ちないようにする
+   (iPhone 13 相当の 664px で約19px、それ以上の端末では上限の 22/28px)。 */
+@media (pointer: coarse) {
+  :root {
+    --cell-size: clamp(14px, calc((100vh - 280px) / 20), 28px);
+    --cell-size: clamp(14px, calc((100dvh - 280px) / 20), 28px);
+  }
+}
+@media (pointer: coarse) and (max-width: 400px) {
+  :root {
+    --cell-size: clamp(14px, calc((100vh - 280px) / 20), 22px);
+    --cell-size: clamp(14px, calc((100dvh - 280px) / 20), 22px);
+  }
+}
+
 /* ===== Line clear animation ===== */
 @keyframes line-clear {
   0%   { transform: scaleY(1); opacity: 1; filter: brightness(2.4); }
