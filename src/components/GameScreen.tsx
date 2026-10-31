@@ -1,6 +1,8 @@
 'use client';
 
-import { useReducer, useEffect, useRef } from 'react';
+import { useReducer, useEffect, useRef, useState } from 'react';
+import { readMini, postToHub, scoreToPoints, type MiniConfig } from '@/lib/mini';
+import { disableStorageWrites } from '@/lib/storage';
 import { reducer, createInitialState } from '@/lib/reducer';
 import { hardDropTarget } from '@/lib/tetrisGame';
 import { loadHighScore } from '@/lib/storage';
@@ -16,6 +18,7 @@ import {
   playGameOver,
   startBgm,
   stopBgm,
+  setMuted,
 } from '@/lib/sound';
 import { GameBoard } from './GameBoard';
 import { NextQueue } from './NextQueue';
@@ -35,6 +38,59 @@ export function GameScreen() {
   const [state, dispatch] = useReducer(reducer, undefined, () =>
     createInitialState(loadHighScore())
   );
+
+  // ---- ミニ版(?mini=1。mini-medley から iframe で呼ばれる。仕様は mini-medley/CLAUDE.md) ----
+  const [mini, setMini] = useState<MiniConfig | null>(null);
+  const [miniDone, setMiniDone] = useState(false);
+  const stateRef = useRef(state);
+  useEffect(() => {
+    stateRef.current = state;
+  });
+  const miniDoneRef = useRef(false);
+  const finishMini = (why: string) => {
+    if (miniDoneRef.current) return;
+    miniDoneRef.current = true;
+    setMiniDone(true);
+    const s = stateRef.current;
+    postToHub({
+      type: 'mini-result',
+      score: scoreToPoints(s.score, s.lines),
+      detail: { score: s.score, lines: s.lines, why },
+    });
+  };
+  useEffect(() => {
+    const cfg = readMini();
+    if (!cfg) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setMini(cfg);
+    setMuted(cfg.mute);
+    disableStorageWrites();
+    let timer: number | undefined;
+    const go = () => {
+      if (stateRef.current.phase !== 'title') return;
+      dispatch({ type: 'START' });
+      timer = window.setTimeout(() => finishMini('time'), cfg.sec * 1000);
+    };
+    const onMsg = (e: MessageEvent) => {
+      if (e.source !== window.parent || e.data?.type !== 'mini-go') return;
+      go();
+    };
+    window.addEventListener('message', onMsg);
+    postToHub({ type: 'mini-ready' });
+    // 単独で開いたとき(親が無い)は自動で始める
+    const solo = window.parent === window ? window.setTimeout(go, 300) : undefined;
+    (window as unknown as { __tetris?: unknown }).__tetris = { state: () => stateRef.current, done: () => miniDoneRef.current };
+    return () => {
+      window.removeEventListener('message', onMsg);
+      if (timer) window.clearTimeout(timer);
+      if (solo) window.clearTimeout(solo);
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  useEffect(() => {
+    if (mini && state.phase === 'gameover') finishMini('gameover');
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mini, state.phase]);
 
   const ghost =
     state.active && state.phase === 'falling'
@@ -69,7 +125,7 @@ export function GameScreen() {
   }, [state.phase, state.clearingRows.length, state.level]);
 
   // BGM: タイトル/ポーズ/ゲームオーバー以外のプレイ中だけ流す
-  const bgmActive = !BGM_INACTIVE_PHASES.has(state.phase);
+  const bgmActive = !BGM_INACTIVE_PHASES.has(state.phase) && !miniDone;
   useEffect(() => {
     if (!bgmActive) return;
     startBgm();
@@ -85,10 +141,10 @@ export function GameScreen() {
 
   // 落下ループ
   useEffect(() => {
-    if (INACTIVE_PHASES.has(state.phase)) return;
+    if (INACTIVE_PHASES.has(state.phase) || miniDone) return;
     const id = setInterval(() => dispatch({ type: 'TICK' }), dropIntervalForLevel(state.level));
     return () => clearInterval(id);
-  }, [state.phase, state.level]);
+  }, [state.phase, state.level, miniDone]);
 
   // キーボード入力
   useEffect(() => {
@@ -114,12 +170,25 @@ export function GameScreen() {
           playHold(); dispatch({ type: 'HOLD' }); break;
         case 'p':
         case 'P':
+          if (readMini()) break; // ミニ版は時計が実時間なのでポーズ無し
           dispatch({ type: 'TOGGLE_PAUSE' }); break;
       }
     };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
   }, []);
+
+  if (mini && (state.phase === 'title' || miniDone)) {
+    // 待機中・終了後は静かな暗転だけ(タイトルや結果は出さない)
+    return (
+      <div
+        className="min-h-screen flex items-center justify-center text-white/60 text-sm"
+        style={{ background: 'radial-gradient(ellipse at top, #0b1a3a 0%, #050510 60%)' }}
+      >
+        {miniDone ? 'おしまい' : ''}
+      </div>
+    );
+  }
 
   if (state.phase === 'title') {
     return (

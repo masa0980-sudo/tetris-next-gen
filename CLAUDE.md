@@ -135,3 +135,13 @@ Firestoreプロジェクト `rythm-game-mo` に対して `fetch()` のみでプ�
 リポジトリがpublicであることと、Settings → Actions → General → Workflow permissions が
 「Read and write permissions」になっている必要がある(privateリポジトリや読み取り専用権限のままだと
 Pagesサイトの作成に失敗する)。
+
+## Mini mode (`?mini=1`, called from mini-medley)
+
+`C:\claude\repos\mini-medley` が `?mini=1&sec=30&mute=0|1` で iframe に呼ぶ。**プロトコルの仕様は mini-medley の CLAUDE.md が正本**。`mini=1` が無いときは従来どおり。
+
+- `src/lib/mini.ts` が URL の読み取り・親への postMessage・点数換算を持つ。**6ライン消しで100点**（ライン数が主役。ハードドロップ加点はスコア換算の最大14点まで）。
+- 流れ: 起動 → 暗い待機画面で `mini-ready` → ハブの `mini-go` で `START`（`incrementPlayCount` は呼ばない）→ `sec` 秒かゲームオーバーで `mini-result` を1回だけ送り、「おしまい」の暗転で止まる。
+- 書かないもの: プレイ回数、ベストスコア（`disableStorageWrites()`）。ポーズ（P）はミニ版では無効。
+- 音は `sound.ts` の master ゲイン経由（`setMuted`）。mute=1 で無音。単独で `?mini=1&sec=10` を開くと 300ms 後に自動開始。テスト用に `window.__tetris.state()/done()`（ミニ版のときだけ）。
+- ボット実測: 何もしないと0・ランダム置きは0〜11（早めにゲームオーバー）・盤面を評価して置くボットは30秒で20ライン（100点）。普通の人の点は未測定。
